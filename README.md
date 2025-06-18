@@ -35,9 +35,4 @@
 - **Git & GitHub** – Para control de versiones y colaboración en equipo.
 - **Render / Vercel** – Para el despliegue continuo y accesibilidad web.
 
-## 📦 Instalación y Uso
-
-1. Clona este repositorio:
-   ```bash
-   git clone https://github.com/tu-usuario/educhat.git
-   ```
+### XXXXXXXXXXXXXXXXXX
