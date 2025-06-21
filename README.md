@@ -35,4 +35,6 @@
 - **Git & GitHub** – Para control de versiones y colaboración en equipo.
 - **Render / Vercel** – Para el despliegue continuo y accesibilidad web.
 
+# Integrante: Hector Perez
+
 ### XXXXXXXXXXXXXXXXXX
