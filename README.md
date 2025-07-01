@@ -36,3 +36,5 @@
 - **Render / Vercel** – Para el despliegue continuo y accesibilidad web.
 
 ### XXXXXXXXXXXXXXXXXX
+
+Integrante: Enrique Quiñones Carrillo
