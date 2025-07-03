@@ -1,10 +1,10 @@
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const fetch = require('node-fetch');
-const Session = require('../models/Session');
-const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const fetch = require("node-fetch");
+const Session = require("../models/Session");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 // Controlador para el registro de usuarios
 exports.register = async (req, res) => {
@@ -14,13 +14,13 @@ exports.register = async (req, res) => {
     // Verificar si el usuario ya existe
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ mensaje: 'El usuario ya existe' });
+      return res.status(400).json({ mensaje: "El usuario ya existe" });
     }
 
     // Crear nuevo usuario
     user = new User({
       email,
-      password
+      password,
     });
 
     // Encriptar contraseña
@@ -33,25 +33,24 @@ exports.register = async (req, res) => {
     // Crear y devolver el token JWT
     const payload = {
       user: {
-        id: user.id
-      }
+        id: user.id,
+      },
     };
 
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
       {
-        expiresIn: '2h'
+        expiresIn: "2h",
       },
       (err, token) => {
         if (err) throw err;
         res.json({ token });
       }
     );
-
   } catch (error) {
     console.error(error.message);
-    res.status(500).json({ mensaje: 'Error en el servidor' });
+    res.status(500).json({ mensaje: "Error en el servidor" });
   }
 };
 
@@ -61,31 +60,31 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     // Primero verificar si ya existe una sesión activa
-    const activeSession = await Session.findOne({ 
+    const activeSession = await Session.findOne({
       email: email,
-      isActive: true 
+      isActive: true,
     });
 
     if (activeSession) {
       return res.status(400).json({
-        message: 'Ya existe una sesión activa en otro navegador',
-        hasActiveSession: true
+        message: "Ya existe una sesión activa en otro navegador",
+        hasActiveSession: true,
       });
     }
 
     // Si no hay sesión activa, continuar con el login
     const user = await User.findOne({ email });
-    if (!user || !await user.comparePassword(password)) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
     const token = jwt.sign(
-      { 
-        id: user._id, 
-        role: user.role
+      {
+        id: user._id,
+        role: user.role,
       },
       process.env.JWT_SECRET,
-      { expiresIn: '8h' }
+      { expiresIn: "8h" }
     );
 
     // Crear nueva sesión
@@ -93,7 +92,7 @@ exports.login = async (req, res) => {
       userId: user._id,
       email: user.email,
       token: token,
-      isActive: true
+      isActive: true,
     });
 
     res.json({
@@ -102,55 +101,54 @@ exports.login = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
-
   } catch (error) {
-    console.error('Error en login:', error);
-    res.status(500).json({ message: 'Error en el servidor' });
+    console.error("Error en login:", error);
+    res.status(500).json({ message: "Error en el servidor" });
   }
 };
 
 // Obtener información del usuario autenticado
 exports.getUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id).select("-password");
     res.json(user);
   } catch (error) {
     console.error(error.message);
-    res.status(500).json({ mensaje: 'Error en el servidor' });
+    res.status(500).json({ mensaje: "Error en el servidor" });
   }
 };
 
 exports.checkSession = async (req, res) => {
   try {
     const { email } = req.body;
-    const existingSession = await Session.findOne({ 
+    const existingSession = await Session.findOne({
       email: email,
-      isActive: true 
+      isActive: true,
     });
-    
+
     res.json({ hasActiveSession: !!existingSession });
   } catch (error) {
-    console.error('Error al verificar sesión:', error);
-    res.status(500).json({ message: 'Error al verificar sesión' });
+    console.error("Error al verificar sesión:", error);
+    res.status(500).json({ message: "Error al verificar sesión" });
   }
 };
 
 exports.logout = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     await Session.findOneAndUpdate(
       { email: email, isActive: true },
       { isActive: false }
     );
 
-    res.json({ message: 'Sesión cerrada correctamente' });
+    res.json({ message: "Sesión cerrada correctamente" });
   } catch (error) {
-    console.error('Error en logout:', error);
-    res.status(500).json({ message: 'Error al cerrar sesión' });
+    console.error("Error en logout:", error);
+    res.status(500).json({ message: "Error al cerrar sesión" });
   }
 };
 
@@ -158,17 +156,17 @@ exports.logout = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ 
-        message: 'No existe una cuenta con ese correo electrónico' 
+      return res.status(404).json({
+        message: "No existe una cuenta con ese correo electrónico",
       });
     }
 
     // Generar token único
-    const resetToken = crypto.randomBytes(20).toString('hex');
-    
+    const resetToken = crypto.randomBytes(20).toString("hex");
+
     // Guardar token y fecha de expiración (2 horas)
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 7200000; // 2 horas
@@ -176,11 +174,11 @@ exports.forgotPassword = async (req, res) => {
 
     // Configurar el transporter de nodemailer
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
+        pass: process.env.EMAIL_PASS,
+      },
     });
 
     // URL del frontend para resetear la contraseña
@@ -190,7 +188,7 @@ exports.forgotPassword = async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: user.email,
-      subject: 'Recuperación de Contraseña - Control Escolar',
+      subject: "Recuperación de Contraseña - Control Escolar",
       html: `
         <h2>Recuperación de Contraseña</h2>
         <p>Has solicitado restablecer tu contraseña.</p>
@@ -198,20 +196,20 @@ exports.forgotPassword = async (req, res) => {
         <a href="${resetUrl}">Restablecer Contraseña</a>
         <p>Este enlace expirará en 2 horas.</p>
         <p>Si no solicitaste esto, ignora este correo.</p>
-      `
+      `,
     };
 
     // Enviar el email
     await transporter.sendMail(mailOptions);
 
-    res.json({ 
-      message: 'Se ha enviado un enlace de recuperación a tu correo electrónico' 
+    res.json({
+      message:
+        "Se ha enviado un enlace de recuperación a tu correo electrónico",
     });
-
   } catch (error) {
-    console.error('Error en recuperación:', error);
-    res.status(500).json({ 
-      message: 'Error al procesar la solicitud de recuperación' 
+    console.error("Error en recuperación:", error);
+    res.status(500).json({
+      message: "Error al procesar la solicitud de recuperación",
     });
   }
 };
@@ -225,18 +223,18 @@ exports.resetPassword = async (req, res) => {
     // Buscar usuario con token válido y no expirado
     const user = await User.findOne({
       resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
+      resetPasswordExpires: { $gt: Date.now() },
     });
 
     if (!user) {
-      return res.status(400).json({ 
-        message: 'El enlace de recuperación es inválido o ha expirado' 
+      return res.status(400).json({
+        message: "El enlace de recuperación es inválido o ha expirado",
       });
     }
 
     // Actualizar contraseña - NO hashear aquí, el middleware lo hará
     user.password = password;
-    
+
     // Limpiar campos de recuperación
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
@@ -244,14 +242,13 @@ exports.resetPassword = async (req, res) => {
     // Guardar cambios - el middleware hasheará la contraseña
     await user.save();
 
-    res.json({ 
-      message: 'Contraseña actualizada exitosamente' 
+    res.json({
+      message: "Contraseña actualizada exitosamente",
     });
-
   } catch (error) {
-    console.error('Error al restablecer:', error);
-    res.status(500).json({ 
-      message: 'Error al restablecer la contraseña' 
+    console.error("Error al restablecer:", error);
+    res.status(500).json({
+      message: "Error al restablecer la contraseña",
     });
   }
 };
